@@ -1,15 +1,10 @@
 use Mojolicious::Lite;
 
-plugin 'ssl_auth';
-
 # Route with placeholder
 get '/slurm/:cluster' => sub {
   my $c   = shift;
   my $foo = $c->param('cluster');
-  if $c->ssl_auth( 
-    {return 1 if shift->peer_certificate('commonName') eq 'client'}
-  ) { return $c->render(text => "Hello from $foo."); }
-  return $c->render(text => "This is bad");
+  return $c->render(text => "Hello from $foo.");
 };
 
 # Start the Mojolicious command system
