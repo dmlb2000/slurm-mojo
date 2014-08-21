@@ -1,12 +1,23 @@
 #!/usr/bin/perl
 
 use Mojolicious::Lite;
+use Authen::Krb5::Simple;
+use JSON;
+
+use Slurm::Mojo;
+
 
 # Route with placeholder
 get '/slurm/:cluster' => sub {
+  my $services = [
+    "job",
+    "queue",
+    "account"
+  ];
   my $c   = shift;
   my $foo = $c->param('cluster');
-  return $c->render(text => "Hello from $foo.");
+  my $json = JSON->new->allow_nonref;
+  return $c->render(text => $json->encode($services));
 };
 
 # Start the Mojolicious command system
