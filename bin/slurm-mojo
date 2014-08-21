@@ -1,0 +1,11 @@
+use Mojolicious::Lite;
+
+# Route with placeholder
+get '/slurm/:cluster' => sub {
+  my $c   = shift;
+  my $foo = $c->param('cluster');
+  $c->render(text => "Hello from $foo.");
+};
+
+# Start the Mojolicious command system
+app->start;

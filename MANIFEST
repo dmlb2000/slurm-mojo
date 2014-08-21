@@ -1,0 +1,4 @@
+Makefile.PL
+MANIFEST
+lib/Slurm/Mojo.pm
+bin/slurm-mojo
