@@ -2,7 +2,7 @@ FROM fedora
 
 RUN yum -y clean all
 RUN yum -y update
-RUN yum -y install perl-Mojolicious perl-ExtUtils-MakeMaker perl-Authen-Krb5 perl-CPAN perl-HTTP-Tiny git make gcc perl-devel krb5-devel
+RUN yum -y install perl-Mojolicious perl-ExtUtils-MakeMaker perl-Authen-Krb5 perl-CPAN perl-HTTP-Tiny git make gcc perl-devel krb5-devel munge
 
 EXPOSE 3000
 

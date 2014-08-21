@@ -3,22 +3,34 @@
 use Mojolicious::Lite;
 use Authen::Krb5::Simple;
 use JSON;
-
+use Slurm;
 use Slurm::Mojo;
 
 
 # Route with placeholder
-get '/slurm/:cluster' => sub {
+get '/slurm' => sub {
   my $services = [
     "job",
     "queue",
     "account"
   ];
   my $c   = shift;
-  my $foo = $c->param('cluster');
   my $json = JSON->new->allow_nonref;
   return $c->render(text => $json->encode($services));
 };
+
+get '/slurm/queue' => sub {
+  my $c = shift;
+  my $slurm = Slurm::new();
+  my $jobs = $slurm->load_jobs();
+  my $json = JSON->new->allow_nonref;
+  return $c->render(text => $json->allow_blessed->convert_blessed->encode( $jobs->{"job_array"} ) );
+}
+
+get '/slurm/job/:jobid' => sub {
+  my $c = shift;
+  
+}
 
 # Start the Mojolicious command system
 app->start;
