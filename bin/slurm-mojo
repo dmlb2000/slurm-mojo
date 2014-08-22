@@ -1,10 +1,12 @@
 #!/usr/bin/perl
 
 use Mojolicious::Lite;
-use Authen::Krb5::Simple;
 use JSON;
 use Slurm;
-use Slurm::Mojo;
+use Slurm::Mojo qw(AuthRequest);
+use Errno qw(EINTR EIO :POSIX);
+use Data::Dumper;
+use POSIX qw(SIGTERM);
 
 
 # Route with placeholder
@@ -25,12 +27,45 @@ get '/slurm/queue' => sub {
   my $jobs = $slurm->load_jobs();
   my $json = JSON->new->allow_nonref;
   return $c->render(text => $json->allow_blessed->convert_blessed->encode( $jobs->{"job_array"} ) );
-}
+};
+
+del '/slurm/job/:jobid' => sub {
+  my $c = shift;
+  my $jobid = $c->param('jobid');
+  my $slurm = Slurm::new();
+  my $json = JSON->new->allow_nonref;
+  my $httpdata = $json->allow_blessed->convert_blessed->decode( $c->req->body );
+  my ( $user, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell ) = AuthRequest($c);
+  my $job = $slurm->load_job($jobid);
+  my $jobuid = $job->{'job_array'}[0]{'user_id'};
+  die $uid." != ".$jobuid unless $uid == $jobuid;
+  my $resp = $slurm->kill_job($jobid, SIGTERM);
+  die "Couldn't delete job ".$jobid." (".Dumper($resp).")" unless ($resp);
+  return $c->render(text => '{ "status":"success", "job_id": "'.$jobid.'" }');
+};
 
 get '/slurm/job/:jobid' => sub {
   my $c = shift;
-  
-}
+  my $slurm = Slurm::new();
+  my $jobid = $c->param('jobid');
+  my $json = JSON->new->allow_nonref;
+  my $job = $slurm->load_job($jobid);
+  return $c->render(text => $json->allow_blessed->convert_blessed->encode( $job->{"job_array"} ) );
+};
+
+put '/slurm/job' => sub {
+  my $c = shift;
+  my $slurm = Slurm::new();
+  my $json = JSON->new->allow_nonref;
+  my $httpdata = $json->allow_blessed->convert_blessed->decode( $c->req->body );
+  my ( $user, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell ) = AuthRequest($c);
+  my $job_desc_msg = $httpdata->{'job_desc_msg'};
+  $job_desc_msg->{"user_id"} = $uid;
+  $job_desc_msg->{"group_id"} = $gid;
+  my $resp = $slurm->submit_batch_job($job_desc_msg);
+  die "Bad job_desc_msg ($!) (".Dumper($job_desc_msg).") (".Dumper($resp).")" unless ($resp);
+  return $c->render(text => '{ "status": "success", "job_id": "'.$resp->{"job_id"}.'" }');
+};
 
 # Start the Mojolicious command system
 app->start;
